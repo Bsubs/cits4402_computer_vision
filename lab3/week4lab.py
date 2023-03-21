@@ -34,19 +34,29 @@ class ImageGUI:
         self.histogram_button.grid(column=1, row=1, padx=5, pady=5)
         # Create a label to display the equalized image
         self.equalized_label = tk.Label(self.border)
-        self.equalized_label.grid(column=2, row=0, padx=5, pady=10)
+        self.equalized_label.grid(column=3, row=0, padx=5, pady=10)
 
-        # Create a "Low Pass" button
-        self.low_pass_button = tk.Button(self.border, text="Low Pass ->>", command=self.low_pass_filter)
-        self.low_pass_button.grid(column=1, row=2, padx=5, pady=5)
+        # # Create a "Low Pass" button
+        # self.low_pass_button = tk.Button(self.border, text="Low Pass ->>", command=self.low_pass_filter)
+        # self.low_pass_button.grid(column=1, row=2, padx=5, pady=5)
+
+        # Create low pass widget
+        self.low_pass_frame = tk.Frame(self.border)
+        tk.Button(self.low_pass_frame, text="Low Pass", command=self.low_pass_filter).pack(side=tk.LEFT, padx=5, pady=5)
+        self.kernel_size_var = tk.Entry(self.low_pass_frame, width=1)
+        self.kernel_size_var.insert(0, "3")
+        self.kernel_size_var.pack(side=tk.LEFT, padx=5, pady=5)
+        self.sigma_var = tk.Entry(self.low_pass_frame, width=1)
+        self.sigma_var.insert(0,"2")
+        self.sigma_var.pack(side=tk.LEFT, padx=5, pady=5)
+        self.low_pass_frame.grid(column=1, row=2, padx=5, pady=5)
 
         # Create a "High Pass" button
-        self.high_pass_button = tk.Button(self.border, text="<<- High Pass", command=self.high_pass_filter)
+        self.high_pass_button = tk.Button(self.border, text="High Pass", command=self.high_pass_filter)
         self.high_pass_button.grid(column=1, row=3, padx=5, pady=5)
         # Create a label to display the filtered image
         self.filtered_label = tk.Label(self.border)
-        self.filtered_label.grid(column=2, row=0, padx=5, pady=5)
-
+        self.filtered_label.grid(column=3, row=0, padx=5, pady=5)
 
 
 
@@ -102,7 +112,7 @@ class ImageGUI:
 
     def high_pass_filter(self):
         # Get the kernel size and sigma from the scale widgets
-        ksize = self.kernel_size_var.get()
+        ksize = 5
     
     
         # Convert the original image to grayscale
@@ -139,8 +149,8 @@ class ImageGUI:
         
     def low_pass_filter(self):
         # Get the kernel size and sigma from the scale widgets
-        ksize = 3
-        sigma = 2
+        ksize = int(self.kernel_size_var.get())
+        sigma = int(self.sigma_var.get())
 
         # Convert the original image to grayscale
         grayscale_image = self.original_image.convert('L')
