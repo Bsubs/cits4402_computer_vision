@@ -29,16 +29,13 @@ class ImageGUI:
         self.image_label = tk.Label(self.border)
         self.image_label.grid(column=0, row=0, padx=5, pady=5)
 
+        # Create a label to display the filtered image
+        self.filtered_label = tk.Label(self.border)
+        self.filtered_label.grid(column=3, row=0, padx=5, pady=5)
+
         # Create a "Histogram Equalize" button
         self.histogram_button = tk.Button(self.border, text="Histogram Equalize", command=self.histogram_equalize)
         self.histogram_button.grid(column=1, row=1, padx=5, pady=5)
-        # Create a label to display the equalized image
-        self.equalized_label = tk.Label(self.border)
-        self.equalized_label.grid(column=3, row=0, padx=5, pady=10)
-
-        # # Create a "Low Pass" button
-        # self.low_pass_button = tk.Button(self.border, text="Low Pass ->>", command=self.low_pass_filter)
-        # self.low_pass_button.grid(column=1, row=2, padx=5, pady=5)
 
         # Create low pass widget
         self.low_pass_frame = tk.Frame(self.border)
@@ -54,9 +51,14 @@ class ImageGUI:
         # Create a "High Pass" button
         self.high_pass_button = tk.Button(self.border, text="High Pass", command=self.high_pass_filter)
         self.high_pass_button.grid(column=1, row=3, padx=5, pady=5)
-        # Create a label to display the filtered image
-        self.filtered_label = tk.Label(self.border)
-        self.filtered_label.grid(column=3, row=0, padx=5, pady=5)
+
+        # Create high boost widget
+        self.boost_frame = tk.Frame(self.border)
+        tk.Button(self.boost_frame, text="High boost", command=self.high_boost_filter).pack(side=tk.LEFT, padx=5, pady=5)
+        self.boost_factor = tk.Entry(self.boost_frame, width=2)
+        self.boost_factor.insert(0, "10")
+        self.boost_factor.pack(side=tk.LEFT, padx=5, pady=5)
+        self.boost_frame.grid(column=3, row=1, padx=5, pady=5)
 
 
 
@@ -107,14 +109,12 @@ class ImageGUI:
 
         # Convert the image to Tkinter format and display it on the right side
         photo = ImageTk.PhotoImage(pil_image)
-        self.equalized_label.configure(image=photo)
-        self.equalized_label.image = photo
+        self.filtered_label.configure(image=photo)
+        self.filtered_label.image = photo
 
     def high_pass_filter(self):
-        # Get the kernel size and sigma from the scale widgets
+        # Fixed kernel size
         ksize = 5
-    
-    
         # Convert the original image to grayscale
         grayscale_image = self.original_image.convert('L')
     
@@ -179,8 +179,41 @@ class ImageGUI:
         photo = ImageTk.PhotoImage(pil_image)
         self.filtered_label.configure(image=photo)
         self.filtered_label.image = photo
-  
-        
+    
+    def high_boost_filter(self):
+        # Get the boosting factor from the widget
+        bf = int(self.boost_factor.get())
+
+        # Convert the original image to grayscale
+        grayscale_image = self.original_image.convert('L')
+
+        # Convert the grayscale image to a numpy array
+        np_image = np.array(grayscale_image)
+
+        # Apply a 3x3 Gaussian filter to the image
+        filtered_image = cv2.GaussianBlur(np_image, (3, 3), 0)
+
+        boosted_img = cv2.addWeighted(np_image, (bf), filtered_image, (1-bf), 0)
+
+        # Convert the filtered image back to PIL format
+        pil_image = Image.fromarray(boosted_img)
+
+        # Resize the image to fit in the label
+        width, height = pil_image.size
+        max_size = 300
+        if width > height:
+            new_width = max_size
+            new_height = int(height * (max_size / width))
+        else:
+            new_width = int(width * (max_size / height))
+            new_height = max_size
+        pil_image = pil_image.resize((new_width, new_height))
+
+        # Convert the image to Tkinter format and display it on the right side
+        photo = ImageTk.PhotoImage(pil_image)
+        self.filtered_label.configure(image=photo)
+        self.filtered_label.image = photo
+
             
 if __name__ == "__main__":
     root = tk.Tk()
