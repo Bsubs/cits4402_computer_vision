@@ -68,9 +68,14 @@ class ImageGUI:
 
         # Load the chosen image using PIL
         self.original_image = Image.open(file_path)
+        grayscale_image = self.original_image.convert('L')
+        np_image = np.array(grayscale_image)
+
+        # Convert the equalized image back to PIL format
+        pil_image = Image.fromarray(np_image)
 
         # Resize the image to fit in the label
-        width, height = self.original_image.size
+        width, height = pil_image.size
         max_size = 300
         if width > height:
             new_width = max_size
@@ -78,10 +83,10 @@ class ImageGUI:
         else:
             new_width = int(width * (max_size / height))
             new_height = max_size
-        self.original_image = self.original_image.resize((new_width, new_height))
+        pil_image = pil_image.resize((new_width, new_height))
 
         # Convert the image to Tkinter format and display it on the left side
-        photo = ImageTk.PhotoImage(self.original_image)
+        photo = ImageTk.PhotoImage(pil_image)
         self.image_label.configure(image=photo)
         self.image_label.image = photo
         
@@ -114,7 +119,7 @@ class ImageGUI:
 
     def high_pass_filter(self):
         # Fixed kernel size
-        ksize = 5
+        ksize = 3
         # Convert the original image to grayscale
         grayscale_image = self.original_image.convert('L')
     
@@ -190,10 +195,13 @@ class ImageGUI:
         # Convert the grayscale image to a numpy array
         np_image = np.array(grayscale_image)
 
-        # Apply a 3x3 Gaussian filter to the image
-        filtered_image = cv2.GaussianBlur(np_image, (3, 3), 0)
+        # Apply a Laplacian filter to the image
+        filtered_image = cv2.Laplacian(np_image, cv2.CV_64F, ksize=3)
 
-        boosted_img = cv2.addWeighted(np_image, (bf), filtered_image, (1-bf), 0)
+        boosted_img = ((bf-1)*np_image) - np.array(filtered_image)
+
+        # Normalize the filtered image to 0-255 range
+        boosted_img = cv2.normalize(boosted_img, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
 
         # Convert the filtered image back to PIL format
         pil_image = Image.fromarray(boosted_img)
