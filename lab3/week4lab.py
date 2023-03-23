@@ -198,7 +198,7 @@ class ImageGUI:
         # Apply a Laplacian filter to the image
         filtered_image = cv2.Laplacian(np_image, cv2.CV_64F, ksize=3)
 
-        boosted_img = ((bf-1)*np_image) - np.array(filtered_image)
+        boosted_img = ((bf-1)*np_image) + filtered_image
 
         # Normalize the filtered image to 0-255 range
         boosted_img = cv2.normalize(boosted_img, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
