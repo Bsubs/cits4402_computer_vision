@@ -1,4 +1,5 @@
 # Joo Kai Tay, 22489437, Week 4, lab03
+# python week4lab.py
 
 import tkinter as tk
 from tkinter import filedialog
@@ -7,6 +8,7 @@ import numpy as np
 import cv2
 
 class ImageGUI:
+    maxsize=500
    
     def __init__(self, master):
         self.master = master
@@ -76,7 +78,7 @@ class ImageGUI:
 
         # Resize the image to fit in the label
         width, height = pil_image.size
-        max_size = 300
+        max_size = self.maxsize
         if width > height:
             new_width = max_size
             new_height = int(height * (max_size / width))
@@ -103,7 +105,7 @@ class ImageGUI:
 
         # Resize the image to fit in the label
         width, height = pil_image.size
-        max_size = 300
+        max_size = self.maxsize
         if width > height:
             new_width = max_size
             new_height = int(height * (max_size / width))
@@ -125,19 +127,16 @@ class ImageGUI:
     
         # Convert the grayscale image to a numpy array
         np_image = np.array(grayscale_image)
-    
-        # Apply a Laplacian filter to the image
-        filtered_image = cv2.Laplacian(np_image, cv2.CV_64F, ksize=ksize)
-    
-        # Normalize the filtered image to 0-255 range
-        filtered_image = cv2.normalize(filtered_image, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
+
+        high_pass = cv2.subtract(np_image,cv2.GaussianBlur(np_image, (3,3), 0))
+        high_pass= cv2.add(high_pass, 127)
     
         # Convert the filtered image back to PIL format
-        pil_image = Image.fromarray(filtered_image)
+        pil_image = Image.fromarray(high_pass)
     
         # Resize the image to fit in the label
         width, height = pil_image.size
-        max_size = 300
+        max_size = self.maxsize
         if width > height:
             new_width = max_size
             new_height = int(height * (max_size / width))
@@ -171,7 +170,7 @@ class ImageGUI:
 
         # Resize the image to fit in the label
         width, height = pil_image.size
-        max_size = 300
+        max_size = self.maxsize
         if width > height:
             new_width = max_size
             new_height = int(height * (max_size / width))
@@ -195,20 +194,20 @@ class ImageGUI:
         # Convert the grayscale image to a numpy array
         np_image = np.array(grayscale_image)
 
-        # Apply a Laplacian filter to the image
-        filtered_image = cv2.Laplacian(np_image, cv2.CV_64F, ksize=3)
-
-        boosted_img = ((bf-1)*np_image) + filtered_image
-
-        # Normalize the filtered image to 0-255 range
-        boosted_img = cv2.normalize(boosted_img, None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
+        # Apply high pass filter
+        high_pass = cv2.subtract(np_image,cv2.GaussianBlur(np_image, (3,3), 0))
+        high_pass= cv2.add(high_pass, 127)
+        # Multiply original image by boosting factor
+        boosted_img = cv2.multiply((bf-1), np_image)
+        # Add high pass and multiplited image
+        high_boost = cv2.add(boosted_img, high_pass)
 
         # Convert the filtered image back to PIL format
-        pil_image = Image.fromarray(boosted_img)
+        pil_image = Image.fromarray(high_boost)
 
         # Resize the image to fit in the label
         width, height = pil_image.size
-        max_size = 300
+        max_size = self.maxsize
         if width > height:
             new_width = max_size
             new_height = int(height * (max_size / width))
