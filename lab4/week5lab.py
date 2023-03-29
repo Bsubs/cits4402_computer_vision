@@ -119,6 +119,11 @@ class ImageGUI:
         photo = ImageTk.PhotoImage(pil_image)
         self.filtered_label.configure(image=photo)
         self.filtered_label.image = photo
+
+    def draw_circles(self, _event=None):
+        a =0
+        cv2.HoughCircles(img_gray,cv2.HOUGH_GRADIENT,1,20,
+                     param1=60,param2=40,minRadius=0,maxRadius=0)
         
             
 if __name__ == "__main__":
