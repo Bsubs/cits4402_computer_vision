@@ -1,5 +1,8 @@
-# Joo Kai Tay, 22489437, Week 5 Lab
-
+# Joo Kai Tay, 22489437, Week 5 Lab04
+# There are two edge detection techniques bring used, Canny and Sobel to identify step discontinuities in the image as edges
+# The threshold determines the edges detected. The lower the threshold, the more edges detected but is more susceptible to noise
+# A higher threshold means less noise but may result in fragmented edges or missing edges altogether
+# The circle is detected by a Hough Transform. It finds imperfect instances of objects within a class of objects by a voting procedure
 import tkinter as tk
 from tkinter import filedialog
 from PIL import ImageTk, Image
@@ -9,6 +12,7 @@ from skimage.transform import hough_circle, hough_circle_peaks
 from skimage.draw import circle_perimeter
 
 class ImageGUI:
+    # Size of the GUI
     maxsize=500
    
     def __init__(self, master):
@@ -43,16 +47,16 @@ class ImageGUI:
         # Create edge detection drop down menu
         self.algo = tk.StringVar(self.border)
         self.algo.set("canny") # default value
-        self.algo_select = tk.OptionMenu(self.border, self.algo, "prewitt", "sobel", "canny")
+        self.algo_select = tk.OptionMenu(self.border, self.algo, "sobel", "canny")
         self.algo_select.grid(column=1, row=2, padx=5, pady=5)
 
-        # Create edge detection slider widget
+        # Create edge detection threshold slider widget
         self.edge_detection_slider = tk.Scale(self.border, label='Threshold for edge detection', from_=0, to=255, orient=tk.HORIZONTAL, length=255, showvalue=0, command=self.detect_edges)
         self.edge_detection_slider.set('127')
         self.edge_detection_slider.grid(column=3, row=1, padx=5, pady=5) 
 
-        # Create circle detection slider widget
-        self.circle_detection_slider = tk.Scale(self.border, label='Threshold for circle detection', from_=0, to=255, orient=tk.HORIZONTAL, length=255, showvalue=0, command=self.draw_circles)
+        # Create circle detection radius slider widget
+        self.circle_detection_slider = tk.Scale(self.border, label='Approximate Radius for circle detection', from_=25, to=80, orient=tk.HORIZONTAL, length=255, showvalue=0, command=self.draw_circles)
         self.circle_detection_slider.set('0')
         self.circle_detection_slider.grid(column=3, row=2, padx=5, pady=5) 
 
@@ -67,9 +71,10 @@ class ImageGUI:
         self.original_image = Image.open(file_path)
         np_image = np.array(self.original_image)
 
+        # Placeholder for global variable holding the filtered image
         self.filtered_image = 0
 
-        # Convert the equalized image back to PIL format
+        # Convert the image back to PIL format
         pil_image = Image.fromarray(np_image)
 
         # Resize the image to fit in the label
@@ -90,7 +95,8 @@ class ImageGUI:
 
     def detect_edges(self, _event=None):
         # Convert the original image to grayscale
-        grayscale_image = self.original_image.convert('L')
+        original_image = self.original_image
+        grayscale_image = original_image.convert('L')
         np_image = np.array(grayscale_image)
 
         # Get the threshold value from slider widget (default = 127)
@@ -105,8 +111,10 @@ class ImageGUI:
             grad_x = cv2.Sobel(threshold_img, cv2.CV_64F, 1, 0)
             grad_y = cv2.Sobel(threshold_img, cv2.CV_64F, 0, 1)
             edge_detected = np.sqrt(grad_x**2 + grad_y**2)
-            
-        # Convert the equalized image back to PIL format
+        
+        # Update the global variable 
+        self.filtered_image = edge_detected
+        # Convert the image back to PIL format
         pil_image = Image.fromarray(edge_detected)
 
         # Resize the image to fit in the label
@@ -125,28 +133,40 @@ class ImageGUI:
         self.filtered_label.configure(image=photo)
         self.filtered_label.image = photo
 
-        self.filtered_image = photo
 
     def draw_circles(self, _event=None):
 
-        # retrive the original and edge detected image
+        # retrive the original and edge detected image from global variables
         original_img = np.array(self.original_image)
         grayscale_image = np.array(self.original_image.convert('L'))
-        np_image = np.array(grayscale_image)
-        edge_img = np.array(self.filtered_label.image)
+        edge_img = np.array(self.filtered_image)
 
-        # Get the approximate radius value from slider widget (default = 0)
+        # Get the approximate radius value from slider widget (default = 25)
         radius = self.circle_detection_slider.get()
         # Apply Hough transform to image
-        circles = cv2.HoughCircles(grayscale_image,cv2.HOUGH_GRADIENT,1,20, param1=200,param2=50,minRadius=radius,maxRadius=0)
-        circles = np.uint16(np.around(circles))
-        
+        edge_img = np.uint8(edge_img)
+        # Radii to try 
+        try_radii = np.arange(radius, radius+1)
+        hough_res= hough_circle(edge_img.astype(dtype=bool), try_radii)
+        accums, cx,cy,radii = hough_circle_peaks(hough_res, try_radii,threshold=0.25 ,min_xdistance=radius*3, min_ydistance=radius*3, total_num_peaks=2)
+
+        # Convert thresholded image to RBG to allow for plotting of coloured circles
+        coloured_image = Image.fromarray(edge_img)
+        coloured_image = np.array(coloured_image.convert('RGB'))
+
         # Draw the circles
-        for i in circles[0,:]:
-            # draw the outer circle
-            cv2.circle(original_img,(i[0],i[1]),i[2],(0,255,0),2)
-            # draw the center of the circle
-            cv2.circle(original_img,(i[0],i[1]),2,(0,0,255),3)
+        if radii is not None:
+            for center_x, center_y, radius in zip(cx,cy,radii):
+                # draw the outer circle
+                cv2.circle(original_img,(center_x, center_y),radius,(0,255,0),2)
+                # draw the center of the circle
+                cv2.circle(original_img,(center_x, center_y),2,(0,0,255),3)
+            
+            for center_x, center_y, radius in zip(cx,cy,radii):
+                # draw the outer circle
+                cv2.circle(coloured_image,(center_x, center_y),radius,(0,255,0),2)
+                # draw the center of the circle
+                cv2.circle(coloured_image,(center_x, center_y),2,(0,0,255),3)
 
         pil_image = Image.fromarray(original_img)
         # Resize the image to fit in the label
@@ -164,6 +184,23 @@ class ImageGUI:
         photo = ImageTk.PhotoImage(pil_image)
         self.image_label.configure(image=photo)
         self.image_label.image = photo
+
+        pil_image = Image.fromarray(coloured_image)
+        # Resize the image to fit in the label
+        width, height = pil_image.size
+        max_size = self.maxsize
+        if width > height:
+            new_width = max_size
+            new_height = int(height * (max_size / width))
+        else:
+            new_width = int(width * (max_size / height))
+            new_height = max_size
+        pil_image = pil_image.resize((new_width, new_height))
+
+        # Convert the image to Tkinter format and display it on the right side
+        photo = ImageTk.PhotoImage(pil_image)
+        self.filtered_label.configure(image=photo)
+        self.filtered_label.image = photo
 
 
 
