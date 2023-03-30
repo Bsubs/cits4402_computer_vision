@@ -5,6 +5,8 @@ from tkinter import filedialog
 from PIL import ImageTk, Image
 import numpy as np
 import cv2
+from skimage.transform import hough_circle, hough_circle_peaks
+from skimage.draw import circle_perimeter
 
 class ImageGUI:
     maxsize=500
@@ -51,7 +53,7 @@ class ImageGUI:
 
         # Create circle detection slider widget
         self.circle_detection_slider = tk.Scale(self.border, label='Threshold for circle detection', from_=0, to=255, orient=tk.HORIZONTAL, length=255, showvalue=0, command=self.draw_circles)
-        self.circle_detection_slider.set('127')
+        self.circle_detection_slider.set('0')
         self.circle_detection_slider.grid(column=3, row=2, padx=5, pady=5) 
 
 
@@ -64,6 +66,8 @@ class ImageGUI:
         # Load the chosen image using PIL
         self.original_image = Image.open(file_path)
         np_image = np.array(self.original_image)
+
+        self.filtered_image = 0
 
         # Convert the equalized image back to PIL format
         pil_image = Image.fromarray(np_image)
@@ -121,28 +125,30 @@ class ImageGUI:
         self.filtered_label.configure(image=photo)
         self.filtered_label.image = photo
 
+        self.filtered_image = photo
+
     def draw_circles(self, _event=None):
-        #cv2.HoughCircles(img_gray,cv2.HOUGH_GRADIENT,1,20, param1=60,param2=40,minRadius=0,maxRadius=0)
 
         # retrive the original and edge detected image
         original_img = np.array(self.original_image)
+        grayscale_image = np.array(self.original_image.convert('L'))
+        np_image = np.array(grayscale_image)
         edge_img = np.array(self.filtered_label.image)
 
-        # Get the approximate radius value from slider widget (default = 127)
+        # Get the approximate radius value from slider widget (default = 0)
         radius = self.circle_detection_slider.get()
         # Apply Hough transform to image
-        circles = cv2.HoughCircles(edge_img,cv2.HOUGH_GRADIENT,1,20 ,minRadius=radius,maxRadius=0)
+        circles = cv2.HoughCircles(grayscale_image,cv2.HOUGH_GRADIENT,1,20, param1=200,param2=50,minRadius=radius,maxRadius=0)
         circles = np.uint16(np.around(circles))
-
+        
+        # Draw the circles
         for i in circles[0,:]:
             # draw the outer circle
             cv2.circle(original_img,(i[0],i[1]),i[2],(0,255,0),2)
             # draw the center of the circle
             cv2.circle(original_img,(i[0],i[1]),2,(0,0,255),3)
 
-        # Convert the equalized image back to PIL format
         pil_image = Image.fromarray(original_img)
-
         # Resize the image to fit in the label
         width, height = pil_image.size
         max_size = self.maxsize
