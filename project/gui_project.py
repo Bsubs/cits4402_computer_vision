@@ -1,28 +1,6 @@
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import QPixmap
 import sys
-
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import (
-    QApplication,
-    QCheckBox,
-    QComboBox,
-    QDateEdit,
-    QDateTimeEdit,
-    QDial,
-    QDoubleSpinBox,
-    QFontComboBox,
-    QLabel,
-    QLCDNumber,
-    QLineEdit,
-    QMainWindow,
-    QProgressBar,
-    QPushButton,
-    QRadioButton,
-    QSlider,
-    QSpinBox,
-    QTimeEdit,
-    QVBoxLayout,
-    QWidget,
-)
 
 
 # Subclass QMainWindow to customize your application's main window
@@ -30,37 +8,25 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Widgets App")
+        # set window title
+        self.setWindowTitle("CITS4402 Project")
+        # setting  the geometry of window
+        self.setGeometry(0, 0, 400, 300)
+        # Create an instance of label
+        self.label = QLabel(self)
 
-        layout = QVBoxLayout()
-        widgets = [
-            QCheckBox,
-            QComboBox,
-            QDateEdit,
-            QDateTimeEdit,
-            QDial,
-            QDoubleSpinBox,
-            QFontComboBox,
-            QLCDNumber,
-            QLabel,
-            QLineEdit,
-            QProgressBar,
-            QPushButton,
-            QRadioButton,
-            QSlider,
-            QSpinBox,
-            QTimeEdit,
-        ]
+        # Load image
+        self.pixmap = QPixmap('treege.png')
 
-        for w in widgets:
-            layout.addWidget(w())
+        # Set image to label
+        self.label.setPixmap(self.pixmap)
 
-        widget = QWidget()
-        widget.setLayout(layout)
+        # Resize the label according to image size
+        self.label.resize(self.pixmap.width(),
+                        self.pixmap.height())
 
-        # Set the central widget of the Window. Widget will expand
-        # to take up all the space in the window by default.
-        self.setCentralWidget(widget)
+        # show the widgets
+        self.show()
 
 
 
